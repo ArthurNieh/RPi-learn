@@ -12,38 +12,39 @@ int main(int argc , char *argv[])
 {
 
     //socket的建立
-    int sockfd = 0;
-    sockfd = socket(AF_INET , SOCK_STREAM , 0);
+    int socket_clent;
+    socket_clent = socket(AF_INET , SOCK_STREAM , 0);
 
-    if (sockfd == -1){
+    if (socket_clent == -1){
         printf("Fail to create a socket.");
     }
 
     //socket的連線
+    struct sockaddr_in server_info;
+    server_info.sin_family = AF_INET;
 
-    struct sockaddr_in info;
-    bzero(&info,sizeof(info));
-    info.sin_family = PF_INET;
-
-    //localhost test
-    info.sin_addr.s_addr = inet_addr("127.0.0.1");
-    info.sin_port = htons(8700);
+    server_info.sin_port = htons(9002);
+    server_info.sin_addr.s_addr = INADDR_ANY;
 
 
-    int err = connect(sockfd,(struct sockaddr *)&info,sizeof(info));
-    if(err==-1){
-        printf("Connection error");
+    int connection_status = connect(socket_clent, (struct sockaddr *) &server_info, sizeof(server_info));
+    if(connection_status == -1){
+        printf("Connection Error");
     }
 
-
     //Send a message to server
-    char message[] = {"Hi there"};
+    char command[100] = {};
     char receiveMessage[100] = {};
-    send(sockfd,message,sizeof(message),0);
-     recv(sockfd,receiveMessage,sizeof(receiveMessage),0);
 
-    printf("%s",receiveMessage);
-    printf("close Socket\n");
-    close(sockfd);
+    recv(socket_clent, &receiveMessage, sizeof(receiveMessage),0);
+    printf("%s", receiveMessage);
+    
+    // scanf("%s", command);
+    // send(socket_clent, command, sizeof(command), 0);
+    
+
+    // printf("%s",receiveMessage);
+    // printf("close Socket\n");
+    close(socket_clent);
     return 0;
 }
