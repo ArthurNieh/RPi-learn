@@ -39,12 +39,19 @@ int main(int argc , char *argv[])
     recv(socket_clent, &receiveMessage, sizeof(receiveMessage),0);
     printf("%s", receiveMessage);
     
-    // scanf("%s", command);
-    // send(socket_clent, command, sizeof(command), 0);
+    scanf("%s", command);
+    send(socket_clent, command, sizeof(command), 0);
     
+    recv(socket_clent, &receiveMessage, sizeof(receiveMessage),0);
+    printf("%s", receiveMessage);
 
-    // printf("%s",receiveMessage);
-    // printf("close Socket\n");
+    char number[100] = {};
+    scanf("%s", number);
+    send(socket_clent, number, sizeof(number), 0);
+    
+    recv(socket_clent, &receiveMessage, sizeof(receiveMessage),0);
+    printf("%s", receiveMessage);
+    
     close(socket_clent);
     return 0;
 }
