@@ -4,16 +4,30 @@
 
 int main(){
 
-	pid_t pid = fork();
+	while(1){
 
-	if(pid == 0){
-		execl("/bin/sh", NULL);
+		char input[] = {};
+		scanf(" %s", input);
+		//printf("%s\n", input);
+		if(strcmp(input, "exit") == 0){
+			break;
+		}
+
+		pid_t pid = fork();
+
+		if(pid == 0){
+			execlp("/bin/sh", "ls", "-l", NULL);
+			printf("delete");
+			exit(0);
+		}
+
+		int status;
+		wait(&status);
+
+		printf("%d\n", status);
 	}
 
-	int status;
-	wait(&status);
-
-	printf("%d\n", status);
+	printf("program end.\n");
 
 	return 0;
 }
