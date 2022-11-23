@@ -1,8 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/wait.h>
-#include <unistd.h>
+
+#ifdef __linux__
+	#include <sys/wait.h>
+	#include <unistd.h>
+#endif
 
 int main(){
 
