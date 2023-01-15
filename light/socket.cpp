@@ -64,7 +64,7 @@ int main() {
 
             pid_t pid_c=fork();
             if(pid_c==0){
-                execl("/bin", input, NULL);
+                execl(input, input, NULL);
             }
             int status;
             waitpid(pid_c, &status, 0);
@@ -75,24 +75,6 @@ int main() {
     }
     
     close(socket_client);
-
-
-
-    char userCommand[256];
-    while(1){
-        printf("Please enter a file path to exec: ");
-        scanf("%s",userCommand);
-        if(strcmp(userCommand,"quit")==0)break;
-        pid_t pid_c=fork();
-        if(pid_c==0){
-            if(strcmp(userCommand,"sh")==0)execl("/bin/sh","sh",NULL);
-            else return execl(userCommand,"",NULL);
-        }
-        int status;
-        waitpid(pid_c, &status, 0);
-        printf("Child return : %d\n\n", status);
-    }
-
-
-  return 0;
+    
+    return 0;
 }

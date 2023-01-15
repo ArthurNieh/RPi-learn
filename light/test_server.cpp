@@ -11,12 +11,13 @@ using json = nlohmann::json;
 
 int main(int argc , char *argv[]){
     
-    json input;
-    // char message[] = 
-    // "{
+    // json to_send = 
+    // {
     //     {"cmd", "play"},
     //     {"payload", 24}
-    // }";
+    // };
+    
+    // const char* js_to_message = (const char*)to_send;
     
     int socket_server;
     socket_server = socket(AF_INET , SOCK_STREAM , 0);
@@ -39,20 +40,39 @@ int main(int argc , char *argv[]){
 
     socket_client = accept(socket_server, NULL, NULL);
     
-    int send_message = 5;
+    int send_message = 4;
 
-    for(int i=0;i<send_message;i++){
+    for(int i=1;i<=send_message;i++){
         sleep(6);
         printf("send %d\n", i);
         // send(socket_client, message, sizeof(message), 0);
-        if(i == send_message-1){
-            char message[] = {"last"};
-            send(socket_client, message, sizeof(message), 0);
+        switch(i){
+            case 1:
+                {
+                char message[] = {"one"};
+                send(socket_client, message, sizeof(message), 0);
+                }
+                break;
+            case 2:
+                {
+                char message[] = {"two"};
+                send(socket_client, message, sizeof(message), 0);
+                }
+                break;
+            case 3:
+                {
+                char message[] = {"three"};
+                send(socket_client, message, sizeof(message), 0);
+                }
+                break;
+            case 4:
+                {
+                char message[] = {"last"};
+                send(socket_client, message, sizeof(message), 0);
+                }
+                break;
         }
-        else{
-            char message[] = {"ls"};
-            send(socket_client, message, sizeof(message), 0);
-        }
+        // send(socket_client, message, sizeof(message), 0);
     }
     
     close(socket_server);
