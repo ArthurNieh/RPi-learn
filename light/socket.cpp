@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,6 +14,7 @@
 #include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
+using namespace std;
 
 
 int main() {
@@ -62,16 +64,15 @@ int main() {
             //printf("event value is 0x%x",pollfds.revents);
 
             recv(socket_client, &input, sizeof(input),0);
-            std::cout<<input<<std::endl;
+            cout<<"message from server:\n"<<input<<endl;
             quit = 1;
-            // if(strcmp(input,"last")==0) quit = 1;
 
-            // json j = input;
+            auto j3 = json::parse(input);
+            auto command = j3["command"].get<std::string>();
+            cout<<command<<endl;
 
-            // // auto cmd = input["cmd"].get<std::string>();
-            // std::cout<<std::setw(4)<<j<<std::endl;
-
-
+            ofstream o("payload.json");
+            o << std::setw(4) << j3 << std::endl;
             // pid_t pid_c=fork();
             // if(pid_c==0){
             //     execl(input, input, NULL);
