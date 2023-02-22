@@ -8,7 +8,7 @@ import subprocess
 import websocket
 
 from ntpclient import *
-from boardInfo import *
+# from boardInfo import *
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
@@ -56,10 +56,6 @@ class Client:
         # self.dancerName = sys.argv[1]
         self.dancerName = "Arthur"
 
-        ######zmq#######
-        #self.socket = ZMQSocket(port=8000)
-        ##############
-
     def startclient(self):
         while True:
             try:
@@ -76,8 +72,9 @@ class Client:
 
     def on_message(self, ws, message):
         action, payload = self.ParseServerData(message)
-        if self.Check(ws, action, payload):
-            if action == "command":
+        
+        if action == "command":
+            if self.Check(ws, action, payload):
                 print("execute payload:")
                 print(payload)
                 subp = subprocess.Popen(payload)
@@ -88,12 +85,21 @@ class Client:
                 else:
                     print("Subprocess Failed")
             else:
-                # response = self.METHODS[action](self.ntpclient)
-                print("other action")
-            # self.parse_response(ws, response)
-            print("Send message to rpi complete")
+                print("Failed")
+        
+        elif action == "upload":
+            with open("payload.json", "w") as f:
+                json.dump(payload, f, indent = 4)
+        
+        elif action == "sync":
+            print("sync")
+
         else:
-            print("Failed")
+            print("Invalid action")
+
+        # self.parse_response(ws, response)
+        print("Send message to rpi complete")
+        
 
     def ParseServerData(self, message):
         print("Message from server:")
@@ -102,24 +108,6 @@ class Client:
             message = json.loads(message)
             action = message["action"]
             payload = message["payload"]
-            # if action == "play":
-            #     payload = {
-            #         "start_time": message["payload"]["startTime"],
-            #         "delay_time": message["payload"]["delay"],
-            #     }
-            #     # TODO: calculate message["payload"]["sysTime"]
-            # elif action == "lightCurrentStatus":
-            #     payload = None
-            #     # TODO
-            # elif action == "uploadLed":
-            #     payload = {"file": message["payload"], "dir": LED_SAVE_DIR}
-            # elif action == "uploadOf":
-            #     payload = {"file": message["payload"], "dir": OF_SAVE_DIR}
-            # elif action == "load":
-            #     payload = {"path": "./data/"}
-            # elif action == "statuslight":
-            #     payload = {"status": message["payload"]}
-
             print(action, payload)
             return action, payload
         except:
