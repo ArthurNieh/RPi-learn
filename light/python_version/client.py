@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # from asyncio.windows_events import NULL
 import json
 import os
@@ -6,8 +8,11 @@ import time
 import subprocess
 
 import websocket
+from uuid import getnode as get_mac
 
+from config import *
 from ntpclient import *
+
 # from boardInfo import *
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
@@ -38,9 +43,10 @@ cmdlist = [
 LED_SAVE_DIR = "./data/LED.json"
 OF_SAVE_DIR = "./data/OF.json"
 
+DATA_SAVE_DIR = "/lightdance"
 
-SERVER_IP = "0.0.0.0"
-SERVER_PORT = "8082"
+# SERVER_IP = os.environ["SERVER_IP"]
+# SERVER_PORT = int(os.environ["SERVER_PORT"])
 
 
 class Client:
@@ -54,7 +60,8 @@ class Client:
         #     print("Usage: python3 client/client.py <dancerName>")
         #     exit()
         # self.dancerName = sys.argv[1]
-        self.dancerName = "Arthur"
+        # self.dancerName = "Arthur"
+        # self.dancerName = os.environ["DANCER_NAME"]
 
     def startclient(self):
         while True:
@@ -72,34 +79,49 @@ class Client:
 
     def on_message(self, ws, message):
         action, payload = self.ParseServerData(message)
-        
+
         if action == "command":
             if self.Check(ws, action, payload):
                 print("execute payload:")
                 print(payload)
-                subp = subprocess.Popen(payload)
+                subp = subprocess.Popen(payload, stdout=subprocess.PIPE)
                 print(subp)
+                outs, errs = subp.communicate()
                 subp.wait(2)
                 if subp.poll() == 0:
                     print("Subprocess Success")
+                    
                 else:
                     print("Subprocess Failed")
+                    print("Error message:")
+                    print(errs)
+                self.parse_response(ws, subp.poll(), outs, errs)
+                print("Send response complete")
+
             else:
-                print("Failed")
-        
+                print("ERROR: Command not in command list")
+
         elif action == "upload":
-            with open("payload.json", "w") as f:
-                json.dump(payload, f, indent = 4)
-        
+            print("upload")
+            if not os.path.exists(DATA_SAVE_DIR):
+                os.makedirs(DATA_SAVE_DIR)
+
+            print(os.path.join(DATA_SAVE_DIR, "control.json"))
+            with open(os.path.join(DATA_SAVE_DIR, "control.json"), "w") as f:
+                print("Writing control.json")
+                json.dump(payload[0], f, indent=4)
+            with open(os.path.join(DATA_SAVE_DIR, "OF.json"), "w") as f:
+                print("Writing OF.json")
+                json.dump(payload[1], f, indent=4)
+            with open(os.path.join(DATA_SAVE_DIR, "LED.json"), "w") as f:
+                print("Writing LED.json")
+                json.dump(payload[2], f, indent=4)
+
         elif action == "sync":
             print("sync")
 
         else:
             print("Invalid action")
-
-        # self.parse_response(ws, response)
-        print("Send message to rpi complete")
-        
 
     def ParseServerData(self, message):
         print("Message from server:")
@@ -120,54 +142,36 @@ class Client:
         print(f"{action} not found in cmdlist: {cmdlist}")
         return False
 
-    def parse_response(self, ws, response: str):
-        print(response)  # print the response
-        response = response.split(" ")
-        command = response[1]
-        status = response[3]
-
-        info = " ".join(response[5:]) if len(response) > 5 else "good!!!"
-        if command == "boardInfo":
-            info = {
-                "type": "RPi",
-                "dancerName": response[5],
-                "ip": response[6],
-                "hostName": response[7],
-            }
-        elif command == "sync":
-            delay, offset = response[5], response[6]
-            info = {"delay": int(delay), "offset": int(offset)}
+    def parse_response(self, ws, status, outs: str, errs: str):
+        print(outs)  # print the response
+        response = outs
+        if status != 0:
+            response = errs
 
         ws.send(
             json.dumps(
                 {
-                    "command": command,
-                    "payload": {"success": status == "Success", "info": info},
+                    "status": status,
+                    "payload": {response},
                 }
             )
         )
 
     def on_open(self, ws):
         print("Successfully on_open")  # Print Whether successfully on_open
-        # response = self.METHODS["boardInfo"]()
-        # print(response)
-        # response = response.split(" ")
+        macaddr = ':'.join(("%012X" % get_mac())[i:i+2] for i in range(0, 12, 2))
+        
         ws.send(
             json.dumps(
                 {
-                    "command": "boardInfo",
+                    "status": 0,
                     "payload": {
-                        "success": True,
-                        "info": {
-                            "type": "RPi",
-                            "dancerName": self.dancerName,
-                            "ip": "127.0.0.1",
-                            "hostName": "hostname",
-                        },
-                    },
+                        macaddr
+                    }
                 }
             )
         )
+        print("Mac address sent")
 
     def on_close(self, ws):
         print(f"{self.dancerName} closed")
