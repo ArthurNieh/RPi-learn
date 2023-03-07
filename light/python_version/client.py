@@ -43,7 +43,7 @@ cmdlist = [
 LED_SAVE_DIR = "./data/LED.json"
 OF_SAVE_DIR = "./data/OF.json"
 
-DATA_SAVE_DIR = "/lightdance"
+DATA_SAVE_DIR = "/tmp/lightdance"
 
 # SERVER_IP = os.environ["SERVER_IP"]
 # SERVER_PORT = int(os.environ["SERVER_PORT"])
@@ -84,10 +84,11 @@ class Client:
             if self.Check(ws, action, payload):
                 print("execute payload:")
                 print(payload)
-                subp = subprocess.Popen(payload, stdout=subprocess.PIPE)
-                print(subp)
+                subp = subprocess.Popen(payload, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 outs, errs = subp.communicate()
-                subp.wait(2)
+                outs = outs.decode()
+                errs = errs.decode()
+                print(outs)
                 if subp.poll() == 0:
                     print("Subprocess Success")
                     
@@ -96,15 +97,16 @@ class Client:
                     print("Error message:")
                     print(errs)
                 self.parse_response(ws, subp.poll(), outs, errs)
-                print("Send response complete")
 
             else:
                 print("ERROR: Command not in command list")
 
         elif action == "upload":
             print("upload")
-            if not os.path.exists(DATA_SAVE_DIR):
-                os.makedirs(DATA_SAVE_DIR)
+            try:
+                os.mkdir(DATA_SAVE_DIR)
+            except:
+                print("dirctory /lightdance exist")
 
             print(os.path.join(DATA_SAVE_DIR, "control.json"))
             with open(os.path.join(DATA_SAVE_DIR, "control.json"), "w") as f:
@@ -117,11 +119,20 @@ class Client:
                 print("Writing LED.json")
                 json.dump(payload[2], f, indent=4)
 
+            subp = subprocess.Popen(["load"])
+            # subp = subprocess.Popen(["load", "dancer", os.path.join(DATA_SAVE_DIR, "control.json")])
+            # subp = subprocess.Popen(["load", "OF", os.path.join(DATA_SAVE_DIR, "OF.json")])
+            # subp = subprocess.Popen(["load", "LED", os.path.join(DATA_SAVE_DIR, "LED.json")])
+            print("load complete")
+
+            self.parse_response(ws, 0, "success", "success")
+
         elif action == "sync":
             print("sync")
 
         else:
             print("Invalid action")
+            self.parse_response(ws, -1, "success", "command not found")
 
     def ParseServerData(self, message):
         print("Message from server:")
@@ -152,29 +163,29 @@ class Client:
             json.dumps(
                 {
                     "status": status,
-                    "payload": {response},
+                    "payload": response
                 }
             )
         )
+        print("Send response complete")
 
     def on_open(self, ws):
         print("Successfully on_open")  # Print Whether successfully on_open
         macaddr = ':'.join(("%012X" % get_mac())[i:i+2] for i in range(0, 12, 2))
-        
+        print(macaddr)
         ws.send(
             json.dumps(
                 {
                     "status": 0,
-                    "payload": {
-                        macaddr
-                    }
+                    "payload": macaddr
                 }
             )
         )
+        # ws.send("hello")
         print("Mac address sent")
 
     def on_close(self, ws):
-        print(f"{self.dancerName} closed")
+        print("websocket closed")
 
     ####### on_error ########
     # def on_error(self,ws,error):
